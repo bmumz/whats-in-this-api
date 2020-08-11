@@ -56,46 +56,61 @@ app.get("/", (req, res) => {
 });
 
 app.post("/signin", (req, res) => {
-  bcrypt.compare(
-    "apples",
-    "$2a$08$IgnCi/tXa3EENx/qrUKLZe257caGYrgtYVG9wy0t.edC.AstY.2Di",
-    function (err, res) {
-      console.log("first guess", res);
-      // res === true
-    }
-  );
-  bcrypt.compare(
-    "not_bacon",
-    "$2a$08$IgnCi/tXa3EENx/qrUKLZe257caGYrgtYVG9wy0t.edC.AstY.2Di",
-    function (err, res) {
-      console.log("second guess", res);
-    }
-  );
-  if (
-    req.body.email === database.users[0].email &&
-    req.body.password === database.users[0].password
-  ) {
-    res.json(database.users[0]);
-  } else {
-    res.status(400).json("error");
-  }
+  db.select("email", "hash")
+    .from("login")
+    .where("email", "=", req.body.email)
+    .then((data) => {
+      const isValid = bcrypt.compareSync(req.body.password, data[0].hash);
+
+      if (isValid) {
+        return db
+          .select("*")
+          .from("users")
+          .where("email", "=", req.body.email)
+          .then((user) => {
+            res.json(user[0]);
+          })
+          .catch((err) => {
+            res.status(400).json("Unable to get user.");
+          });
+      } else {
+        res.status(400).json("Wrong username or password.");
+      }
+    })
+    .catch((err) => {
+      res.status(400).json("Wrong username or password.");
+    });
 });
 
 app.post("/signup", (req, res) => {
   const { email, name, password } = req.body;
-  db("users")
-    .returning("*")
-    .insert({
-      email: email,
-      name: name,
-      joined: new Date(),
-    })
-    .then((user) => {
-      res.json(user[0]);
-    })
-    .catch((err) => {
-      res.status(400).json("Unable to register");
-    });
+  const hash = bcrypt.hashSync(password);
+  db.transaction((trx) => {
+    trx
+      .insert({
+        hash: hash,
+        email: email,
+      })
+      .into("login")
+      .returning("email")
+      .then((loginEmail) => {
+        return trx("users")
+          .returning("*")
+          .insert({
+            email: loginEmail[0],
+            name: name,
+            joined: new Date(),
+          })
+          .then((user) => {
+            res.json(user[0]);
+          });
+      })
+      //if above is entered, commit to table.
+      .then(trx.commit)
+      .catch(trx.rollback);
+  }).catch((err) => {
+    res.status(400).json("Unable to register");
+  });
 });
 
 app.get("/profile/:id", (req, res) => {
@@ -116,26 +131,16 @@ app.get("/profile/:id", (req, res) => {
 
 app.put("/image", (req, res) => {
   const { id } = req.body;
-  let found = false;
-  database.users.forEach((user) => {
-    if (user.id === id) {
-      found = true;
-      user.entries++;
-      return res.json(user.entries);
-    }
-  });
-  if (!found) {
-    res.status(400).json("not found");
-  }
+  db("users")
+    .where("id", "=", id)
+    .increment("entries", 1)
+    .returning("entries")
+    .then((entries) => {
+      res.json(entries[0]);
+    })
+    .catch((err) => res.status(400).json("Unable to get number of entries."));
 });
 
 app.listen(3000, () => {
   console.log("app is running on port 3000");
 });
-
-/*
-/ --> res = this is working
-/signin --> POST = success/fail
-/register --> POST = user
-/profile/:userid --> GET = user
-*/
