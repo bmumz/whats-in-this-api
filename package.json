@@ -2,11 +2,13 @@
   "name": "whatsinthisapi",
   "version": "1.0.0",
   "description": "",
+  "engines": {
+    "node": "12.16.1"
+  },
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "start:dev": "nodemon server.js"
-    .....    
   },
   "keywords": [],
   "author": "",
