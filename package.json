@@ -7,7 +7,7 @@
   },
   "main": "server.js",
   "scripts": {
-    "start": "serve -s build"
+    "start": "node server.js"
   },
   "keywords": [],
   "author": "",
