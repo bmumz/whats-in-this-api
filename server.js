@@ -1,14 +1,15 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const cors = require("cors");
-const knex = require("knex");
+// const knex = require("knex");
+const pg = requite("pg");
 
 const signUp = require("./controllers/signup");
 const signIn = require("./controllers/signin");
 const profile = require("./controllers/profile");
 const image = require("./controllers/image");
 
-const db = knex({
+const db = pg({
   client: "pg",
   connectionString: process.env.DATABASE_URL,
   ssl: {
