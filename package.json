@@ -7,7 +7,7 @@
   },
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "serve -s build"
   },
   "keywords": [],
   "author": "",
@@ -19,7 +19,8 @@
     "cors": "^2.8.5",
     "express": "^4.17.1",
     "knex": "^0.21.4",
-    "pg": "^8.3.2"
+    "pg": "^8.3.2",
+    "serve": "^11.3.2"
   },
   "devDependencies": {
     "nodemon": "^2.0.4"
